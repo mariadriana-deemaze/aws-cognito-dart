@@ -6,7 +6,9 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { SignInResponse } from './dto/responses/sign-in.dto';
 import { GetBearerToken } from 'src/common/decorators/get-bearer.decorator';
 import { SignUpConfirmResponse } from './dto/responses/sign-up-confirm.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -42,6 +44,7 @@ export class AuthController {
     });
   }
 
+  @ApiBearerAuth()
   @Get('me')
   async me(@GetBearerToken() accessToken: string): Promise<MeResponse> {
     const response = await this.authService.me(accessToken);
