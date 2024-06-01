@@ -7,6 +7,7 @@ import PinoLoggerConfig from './config/pino.config';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/auth.guard';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
 const customDBValidators = [];
 
 @Module({
@@ -16,7 +17,8 @@ const customDBValidators = [];
       load: [],
       validate
     }),
-    LoggerModule.forRoot(PinoLoggerConfig)
+    LoggerModule.forRoot(PinoLoggerConfig),
+    AuthModule
   ],
   controllers: [AppController],
   providers: [

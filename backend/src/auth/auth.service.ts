@@ -1,25 +1,45 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto, UpdateAuthDto } from './dto';
+import { HttpStatus, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common';
+import { ConfirmCreateAuthDto, SignInDto, SignUpDto } from './dto';
+import { AwsCognitoService } from './aws-cognito/aws-cognito.service';
+import {
+  AuthenticationResultType,
+  GetUserCommandOutput,
+  SignUpCommandOutput
+} from '@aws-sdk/client-cognito-identity-provider';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto): string {
-    return `This action adds a new auth ${JSON.stringify(createAuthDto)}`;
+  constructor(private readonly cognito: AwsCognitoService) {}
+
+  async create(signUpDto: SignUpDto): Promise<SignUpCommandOutput> {
+    try {
+      const response = await this.cognito.signUp(signUpDto);
+      return response;
+    } catch (error) {
+      throw new UnauthorizedException();
+    }
   }
 
-  findAll(): string {
-    return `This action returns all auth`;
+  async get(signInDto: SignInDto): Promise<AuthenticationResultType> {
+    try {
+      const response = await this.cognito.signIn(signInDto);
+      return response.AuthenticationResult;
+    } catch (error) {
+      throw new UnauthorizedException();
+    }
   }
 
-  findOne(id: number): string {
-    return `This action returns a #${id} auth`;
+  async confirm(confirmCreateAuthDto: ConfirmCreateAuthDto): Promise<boolean> {
+    const response = await this.cognito.signUpConfirm(confirmCreateAuthDto);
+    return response.$metadata.httpStatusCode === HttpStatus.OK;
   }
 
-  update(id: number, updateAuthDto: UpdateAuthDto): string {
-    return `This action updates a #${id} auth ${JSON.stringify(updateAuthDto)}`;
-  }
-
-  remove(id: number): string {
-    return `This action removes a #${id} auth`;
+  async me(acessToken: string): Promise<GetUserCommandOutput> {
+    try {
+      const response = await this.cognito.get(acessToken);
+      return response;
+    } catch (error) {
+      throw new UnprocessableEntityException();
+    }
   }
 }

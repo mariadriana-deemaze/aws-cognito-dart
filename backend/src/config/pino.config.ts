@@ -1,5 +1,8 @@
 import { Params } from 'nestjs-pino';
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 const PinoLoggerConfig: Params = {
   pinoHttp: {
     enabled: !(process.env.NODE_ENV === 'test'),

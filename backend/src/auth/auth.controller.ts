@@ -1,34 +1,63 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/payload/create-user.dto';
-import { UpdateAuthDto } from './dto';
+import { ConfirmCreateAuthDto, SignInDto, SignUpDto, MeResponse, SignUpResponse } from './dto';
+import { Public } from 'src/common/decorators/public.decorator';
+import { SignInResponse } from './dto/responses/sign-in.dto';
+import { GetBearerToken } from 'src/common/decorators/get-bearer.decorator';
+import { SignUpConfirmResponse } from './dto/responses/sign-up-confirm.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto): string {
-    return this.authService.create(createAuthDto);
+  @Public()
+  @Post('sign-up')
+  async signUp(@Body() signUpDto: SignUpDto): Promise<SignUpResponse> {
+    const response = await this.authService.create(signUpDto);
+    return plainToInstance(SignUpResponse, {
+      success: true,
+      verified: response.UserConfirmed
+    });
   }
 
-  @Get()
-  findAll(): string {
-    return this.authService.findAll();
+  @Public()
+  @Post('sign-up/confirm')
+  async signUpConfirm(@Body() confirmCreateAuthDto: ConfirmCreateAuthDto): Promise<SignUpConfirmResponse> {
+    const response = await this.authService.confirm(confirmCreateAuthDto);
+    return plainToInstance(SignUpConfirmResponse, {
+      success: response
+    });
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string): string {
-    return this.authService.findOne(+id);
+  @Public()
+  @Post('sign-in')
+  async signIn(@Body() signInDto: SignInDto): Promise<SignInResponse> {
+    const response = await this.authService.get(signInDto);
+    return plainToInstance(SignInResponse, {
+      type: response.TokenType,
+      accessToken: response.AccessToken,
+      refreshToken: response.RefreshToken,
+      expiresIn: response.ExpiresIn
+    });
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto): string {
-    return this.authService.update(+id, updateAuthDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string): string {
-    return this.authService.remove(+id);
+  @Get('me')
+  async me(@GetBearerToken() accessToken: string): Promise<MeResponse> {
+    const response = await this.authService.me(accessToken);
+    const attributes: Record<'sub' | 'email' | 'email_verified', string> = {
+      sub: '',
+      email: '',
+      /* eslint-disable camelcase */
+      email_verified: ''
+    };
+    response.UserAttributes.map(({ Name, Value }) => {
+      attributes[Name] = Value;
+    });
+    return plainToInstance(MeResponse, {
+      id: attributes.sub,
+      email: attributes.email,
+      verified: attributes.email_verified === 'true'
+    });
   }
 }

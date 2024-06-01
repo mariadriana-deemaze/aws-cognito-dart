@@ -1,10 +1,7 @@
 import { Exclude, Expose } from 'class-transformer';
 
 @Exclude()
-export class UserResponse {
+export class SignUpConfirmResponse {
   @Expose()
-  id: string;
-
-  @Expose()
-  username: string;
+  success: boolean;
 }
